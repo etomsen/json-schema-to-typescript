@@ -97,12 +97,12 @@ function declareNamedTypes(ast: AST, rootASTName: string, options: Options, proc
             break
         case 'INTERSECTION':
         case 'UNION':
-            //
             let tmp = hasStandaloneName(ast)
                 && (
                     ((ast.standaloneName === rootASTName || options.declareReferenced) && generateStandaloneType(ast, options))
+                    ||
+                    ((ast.standaloneName !== rootASTName && options.declareReferencedImport) && generateTypeImport(ast, options))
                 )
-            //
             type = [tmp, ast.params.map(ast => declareNamedTypes(ast, rootASTName, options, processed)).filter(Boolean).join('\n')
             ].filter(Boolean).join('\n')
             break
@@ -206,13 +206,17 @@ function generateStandaloneInterface(ast: TNamedInterface, options: Options): st
 }
 
 function generateInterfaceImport(ast: TNamedInterface, options: Options): string {
-  return `import {${toSafeString(ast.standaloneName)}} from './${ast.standaloneName}${options.declareReferencedImport}'`
+    return `import {${toSafeString(ast.standaloneName)}} from './${ast.standaloneName}${options.declareReferencedImport}'`
 }
 
 function generateStandaloneType(ast: ASTWithStandaloneName, options: Options): string {
-  return (hasComment(ast) ? generateComment(ast.comment, options, 0) + '\n' : '')
+    return (hasComment(ast) ? generateComment(ast.comment, options, 0) + '\n' : '')
     +  `export type ${toSafeString(ast.standaloneName)} = ${generateType(omit<ASTWithStandaloneName, AST>(ast, 'standaloneName'), options, 0)}`
     + (options.enableTrailingSemicolonForTypes ? ';' : '')
+}
+
+function generateTypeImport(ast: ASTWithStandaloneName, options: Options): string {
+    return `import {${toSafeString(ast.standaloneName)}} from './${ast.standaloneName}${options.declareReferencedImport}'`
 }
 
 function escapeKeyName(keyName: string): string {
