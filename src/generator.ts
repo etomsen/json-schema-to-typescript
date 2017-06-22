@@ -81,18 +81,14 @@ function declareNamedInterfaces(ast: AST, options: Options, rootASTName: string,
   return type
 }
 
-function declareNamedTypes(
-  ast: AST,
-  options: Options,
-  processed = new Set<AST>()
-): string {
+function declareNamedTypes(ast: AST, options: Options, processed = new Set<AST>()): string {
 
-  if (processed.has(ast)) {
-    return ''
-  }
+    if (processed.has(ast)) {
+        return ''
+    }
 
-  processed.add(ast)
-  let type = ''
+    processed.add(ast)
+    let type = ''
 
   switch (ast.type) {
     case 'ARRAY':
