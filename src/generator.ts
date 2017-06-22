@@ -103,9 +103,12 @@ function declareNamedTypes(ast: AST, rootASTName: string, options: Options, proc
                     ||
                     ((ast.standaloneName !== rootASTName && options.declareReferencedImport) && generateTypeImport(ast, options))
                 )
-            type = [tmp, ast.params.map(ast => declareNamedTypes(ast, rootASTName, options, processed)).filter(Boolean).join('\n')
+            type = [
+                tmp,
+                ast.params.map(ast => declareNamedTypes(ast, rootASTName, options, processed)).filter(Boolean).join('\n')
             ].filter(Boolean).join('\n')
             break
+
         default:
             if (hasStandaloneName(ast)) {
             type = generateStandaloneType(ast, options)

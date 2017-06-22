@@ -98,11 +98,13 @@ function declareNamedTypes(ast, rootASTName, options, processed) {
             break;
         case 'INTERSECTION':
         case 'UNION':
-            //
             var tmp = AST_1.hasStandaloneName(ast)
-                && (((ast.standaloneName === rootASTName || options.declareReferenced) && generateStandaloneType(ast, options)));
-            //
-            type = [tmp, ast.params.map(function (ast) { return declareNamedTypes(ast, rootASTName, options, processed); }).filter(Boolean).join('\n')
+                && (((ast.standaloneName === rootASTName || options.declareReferenced) && generateStandaloneType(ast, options))
+                    ||
+                        ((ast.standaloneName !== rootASTName && options.declareReferencedImport) && generateTypeImport(ast, options)));
+            type = [
+                tmp,
+                ast.params.map(function (ast) { return declareNamedTypes(ast, rootASTName, options, processed); }).filter(Boolean).join('\n')
             ].filter(Boolean).join('\n');
             break;
         default:
@@ -202,6 +204,9 @@ function generateStandaloneType(ast, options) {
     return (AST_1.hasComment(ast) ? generateComment(ast.comment, options, 0) + '\n' : '')
         + ("export type " + utils_1.toSafeString(ast.standaloneName) + " = " + generateType(lodash_1.omit(ast, 'standaloneName'), options, 0))
         + (options.enableTrailingSemicolonForTypes ? ';' : '');
+}
+function generateTypeImport(ast, options) {
+    return "import {" + utils_1.toSafeString(ast.standaloneName) + "} from './" + ast.standaloneName + options.declareReferencedImport + "'";
 }
 function escapeKeyName(keyName) {
     if (keyName.length
