@@ -89,6 +89,7 @@ function declareNamedTypes(ast, options, processed) {
             break;
         case 'ENUM':
             type = '';
+            console.log("\n" + JSON.stringify(ast) + "\n");
             break;
         case 'INTERFACE':
             type = ast.params.map(function (_a) {

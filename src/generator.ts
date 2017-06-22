@@ -90,33 +90,34 @@ function declareNamedTypes(ast: AST, options: Options, processed = new Set<AST>(
     processed.add(ast)
     let type = ''
 
-  switch (ast.type) {
-    case 'ARRAY':
-      type = [
-        declareNamedTypes(ast.params, options, processed),
-        hasStandaloneName(ast) ? generateStandaloneType(ast, options) : undefined
-      ].filter(Boolean).join('\n')
-      break
-    case 'ENUM':
-      type = ''
-      break
-    case 'INTERFACE':
-      type = ast.params.map(({ ast }) => declareNamedTypes(ast, options, processed)).filter(Boolean).join('\n')
-      break
-    case 'INTERSECTION':
-    case 'UNION':
-      type = [
-        hasStandaloneName(ast) ? generateStandaloneType(ast, options) : undefined,
-        ast.params.map(ast => declareNamedTypes(ast, options, processed)).filter(Boolean).join('\n')
-      ].filter(Boolean).join('\n')
-      break
-    default:
-      if (hasStandaloneName(ast)) {
-        type = generateStandaloneType(ast, options)
-      }
-  }
+    switch (ast.type) {
+        case 'ARRAY':
+            type = [
+            declareNamedTypes(ast.params, options, processed),
+            hasStandaloneName(ast) ? generateStandaloneType(ast, options) : undefined
+            ].filter(Boolean).join('\n')
+            break
+        case 'ENUM':
+            type = ''
+            console.log(`\n${JSON.stringify(ast)}\n`)
+            break
+        case 'INTERFACE':
+            type = ast.params.map(({ ast }) => declareNamedTypes(ast, options, processed)).filter(Boolean).join('\n')
+            break
+        case 'INTERSECTION':
+        case 'UNION':
+            type = [
+            hasStandaloneName(ast) ? generateStandaloneType(ast, options) : undefined,
+            ast.params.map(ast => declareNamedTypes(ast, options, processed)).filter(Boolean).join('\n')
+            ].filter(Boolean).join('\n')
+            break
+        default:
+            if (hasStandaloneName(ast)) {
+            type = generateStandaloneType(ast, options)
+        }
+    }
 
-  return type
+    return type
 }
 
 function generateType(ast: AST, options: Options, indentDepth: number): string {
