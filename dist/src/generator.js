@@ -9,7 +9,7 @@ function generate(ast, options) {
     if (options === void 0) { options = index_1.DEFAULT_OPTIONS; }
     return [
         options.bannerComment,
-        declareNamedTypes(ast, options),
+        declareNamedTypes(ast, ast.standaloneName, options),
         declareNamedInterfaces(ast, options, ast.standaloneName),
         declareEnums(ast, options)
     ]
@@ -73,7 +73,7 @@ function declareNamedInterfaces(ast, options, rootASTName, processed) {
     }
     return type;
 }
-function declareNamedTypes(ast, options, processed) {
+function declareNamedTypes(ast, rootASTName, options, processed) {
     if (processed === void 0) { processed = new Set(); }
     if (processed.has(ast)) {
         return '';
@@ -83,25 +83,26 @@ function declareNamedTypes(ast, options, processed) {
     switch (ast.type) {
         case 'ARRAY':
             type = [
-                declareNamedTypes(ast.params, options, processed),
+                declareNamedTypes(ast.params, rootASTName, options, processed),
                 AST_1.hasStandaloneName(ast) ? generateStandaloneType(ast, options) : undefined
             ].filter(Boolean).join('\n');
             break;
         case 'ENUM':
             type = '';
-            console.log("\n" + JSON.stringify(ast) + "\n");
             break;
         case 'INTERFACE':
             type = ast.params.map(function (_a) {
                 var ast = _a.ast;
-                return declareNamedTypes(ast, options, processed);
+                return declareNamedTypes(ast, rootASTName, options, processed);
             }).filter(Boolean).join('\n');
             break;
         case 'INTERSECTION':
         case 'UNION':
-            type = [
-                AST_1.hasStandaloneName(ast) ? generateStandaloneType(ast, options) : undefined,
-                ast.params.map(function (ast) { return declareNamedTypes(ast, options, processed); }).filter(Boolean).join('\n')
+            //
+            var tmp = AST_1.hasStandaloneName(ast)
+                && (((ast.standaloneName === rootASTName || options.declareReferenced) && generateStandaloneType(ast, options)));
+            //
+            type = [tmp, ast.params.map(function (ast) { return declareNamedTypes(ast, rootASTName, options, processed); }).filter(Boolean).join('\n')
             ].filter(Boolean).join('\n');
             break;
         default:

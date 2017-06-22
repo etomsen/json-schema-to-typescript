@@ -10,7 +10,7 @@ import { log, toSafeString } from './utils'
 export function generate(ast: AST, options = DEFAULT_OPTIONS): string {
   return [
     options.bannerComment,
-    declareNamedTypes(ast, options),
+    declareNamedTypes(ast, ast.standaloneName!, options),
     declareNamedInterfaces(ast, options, ast.standaloneName!),
     declareEnums(ast, options)
   ]
@@ -19,33 +19,26 @@ export function generate(ast: AST, options = DEFAULT_OPTIONS): string {
     + '\n' // trailing newline
 }
 
-function declareEnums(
-  ast: AST,
-  options: Options,
-  processed = new Set<AST>()
-): string {
+function declareEnums(ast: AST, options: Options, processed = new Set<AST>()): string {
 
-  if (processed.has(ast)) {
-    return ''
-  }
+    if (processed.has(ast)) {
+        return ''
+    }
 
-  processed.add(ast)
-  let type = ''
+    processed.add(ast)
+    let type = ''
 
-  switch (ast.type) {
-    case 'ENUM':
-      type = generateStandaloneEnum(ast, options) + '\n'
-      break
-    case 'INTERFACE':
-      type = ast.params.reduce((prev, { ast }) =>
-        prev + declareEnums(ast, options, processed),
-        '')
-      break
-    default:
-      return ''
-  }
-
-  return type
+    switch (ast.type) {
+        case 'ENUM':
+            type = generateStandaloneEnum(ast, options) + '\n'
+            break
+        case 'INTERFACE':
+            type = ast.params.reduce((prev, { ast }) => prev + declareEnums(ast, options, processed), '')
+            break
+        default:
+            return ''
+    }
+    return type
 }
 
 function declareNamedInterfaces(ast: AST, options: Options, rootASTName: string, processed = new Set<AST>()): string {
@@ -70,18 +63,17 @@ function declareNamedInterfaces(ast: AST, options: Options, rootASTName: string,
                 ast.params.map(({ ast }) => declareNamedInterfaces(ast, options, rootASTName, processed)).filter(Boolean).join('\n')
             ].filter(Boolean).join('\n')
             break
-    case 'INTERSECTION':
-    case 'UNION':
-      type = ast.params.map(_ => declareNamedInterfaces(_, options, rootASTName, processed)).filter(Boolean).join('\n')
-      break
-    default:
-      type = ''
-  }
-
+        case 'INTERSECTION':
+        case 'UNION':
+            type = ast.params.map(_ => declareNamedInterfaces(_, options, rootASTName, processed)).filter(Boolean).join('\n')
+        break
+        default:
+        type = ''
+    }
   return type
 }
 
-function declareNamedTypes(ast: AST, options: Options, processed = new Set<AST>()): string {
+function declareNamedTypes(ast: AST, rootASTName: string, options: Options, processed = new Set<AST>()): string {
 
     if (processed.has(ast)) {
         return ''
@@ -93,22 +85,25 @@ function declareNamedTypes(ast: AST, options: Options, processed = new Set<AST>(
     switch (ast.type) {
         case 'ARRAY':
             type = [
-            declareNamedTypes(ast.params, options, processed),
+            declareNamedTypes(ast.params, rootASTName, options, processed),
             hasStandaloneName(ast) ? generateStandaloneType(ast, options) : undefined
             ].filter(Boolean).join('\n')
             break
         case 'ENUM':
             type = ''
-            console.log(`\n${JSON.stringify(ast)}\n`)
             break
         case 'INTERFACE':
-            type = ast.params.map(({ ast }) => declareNamedTypes(ast, options, processed)).filter(Boolean).join('\n')
+            type = ast.params.map(({ ast }) => declareNamedTypes(ast, rootASTName, options, processed)).filter(Boolean).join('\n')
             break
         case 'INTERSECTION':
         case 'UNION':
-            type = [
-            hasStandaloneName(ast) ? generateStandaloneType(ast, options) : undefined,
-            ast.params.map(ast => declareNamedTypes(ast, options, processed)).filter(Boolean).join('\n')
+            //
+            let tmp = hasStandaloneName(ast)
+                && (
+                    ((ast.standaloneName === rootASTName || options.declareReferenced) && generateStandaloneType(ast, options))
+                )
+            //
+            type = [tmp, ast.params.map(ast => declareNamedTypes(ast, rootASTName, options, processed)).filter(Boolean).join('\n')
             ].filter(Boolean).join('\n')
             break
         default:
@@ -189,7 +184,7 @@ function generateComment(comment: string, options: Options, indentDepth: number)
 }
 
 function generateStandaloneEnum(ast: TEnum, options: Options): string {
-  return (hasComment(ast) ? generateComment(ast.comment, options, 0) + '\n' : '')
+    return (hasComment(ast) ? generateComment(ast.comment, options, 0) + '\n' : '')
     + 'export ' + (options.enableConstEnums ? 'const ' : '') + `enum ${toSafeString(ast.standaloneName)} {`
     + '\n'
     + ast.params.map(({ ast, keyName }) =>
