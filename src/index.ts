@@ -16,6 +16,7 @@ export interface Options {
   bannerComment: string,
   cwd: string
   declareReferenced: boolean
+  declareReferencedImport: string
   enableConstEnums: boolean
   enableTrailingSemicolonForTypes: boolean
   enableTrailingSemicolonForEnums: boolean
@@ -32,6 +33,7 @@ export const DEFAULT_OPTIONS: Options = {
 */`,
   cwd: process.cwd(),
   declareReferenced: true,
+  declareReferencedImport: '.gen',
   enableConstEnums: true, // by default, avoid generating code
   enableTrailingSemicolonForEnums: false,
   enableTrailingSemicolonForInterfaceProperties: true,

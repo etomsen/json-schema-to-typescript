@@ -48,32 +48,28 @@ function declareEnums(
   return type
 }
 
-function declareNamedInterfaces(
-  ast: AST,
-  options: Options,
-  rootASTName: string,
-  processed = new Set<AST>()
-): string {
-
-  if (processed.has(ast)) {
-    return ''
-  }
-
-  processed.add(ast)
-  let type = ''
-
-  switch (ast.type) {
-    case 'ARRAY':
-      type = declareNamedInterfaces((ast as TArray).params, options, rootASTName, processed)
-      break
-    case 'INTERFACE':
-      type = [
-        hasStandaloneName(ast) && (ast.standaloneName === rootASTName || options.declareReferenced) && generateStandaloneInterface(ast, options),
-        ast.params.map(({ ast }) =>
-          declareNamedInterfaces(ast, options, rootASTName, processed)
-        ).filter(Boolean).join('\n')
-      ].filter(Boolean).join('\n')
-      break
+function declareNamedInterfaces(ast: AST, options: Options, rootASTName: string, processed = new Set<AST>()): string {
+    if (processed.has(ast)) {
+        return ''
+    }
+    processed.add(ast)
+    let type = ''
+    switch (ast.type) {
+        case 'ARRAY':
+            type = declareNamedInterfaces((ast as TArray).params, options, rootASTName, processed)
+            break
+        case 'INTERFACE':
+            let tmp = hasStandaloneName(ast)
+                && (
+                    ((ast.standaloneName === rootASTName || options.declareReferenced) && generateStandaloneInterface(ast, options))
+                    ||
+                    ((ast.standaloneName !== rootASTName && options.declareReferencedImport) && generateInterfaceImport(ast, options))
+                )
+            type = [
+                tmp,
+                ast.params.map(({ ast }) => declareNamedInterfaces(ast, options, rootASTName, processed)).filter(Boolean).join('\n')
+            ].filter(Boolean).join('\n')
+            break
     case 'INTERSECTION':
     case 'UNION':
       type = ast.params.map(_ => declareNamedInterfaces(_, options, rootASTName, processed)).filter(Boolean).join('\n')
@@ -215,6 +211,10 @@ function generateStandaloneInterface(ast: TNamedInterface, options: Options): st
     + `export interface ${toSafeString(ast.standaloneName)} `
     + generateInterface(ast, options, 0)
     + (options.enableTrailingSemicolonForInterfaces ? ';' : '')
+}
+
+function generateInterfaceImport(ast: TNamedInterface, options: Options): string {
+  return `import {${toSafeString(ast.standaloneName)}} from './${ast.standaloneName}${options.declareReferencedImport}'`
 }
 
 function generateStandaloneType(ast: ASTWithStandaloneName, options: Options): string {
